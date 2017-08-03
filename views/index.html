@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Cognitiva | Watson STT</title>
+
+    <script src="javascripts/socket.io.js"></script>
+
+  </head>
+  <body>
+    <h1>Welcome!</h1>
+    <h2>This is the Cognitiva Speech to Text Demo!</h2>
+    <p>Let's hope it works.</p>
+
+    <audio id="player" controls></audio>
+    <script>
+      //Documentación: https://developers.google.com/web/fundamentals/native-hardware/recording-audio/
+      var player = document.getElementById('player');
+      var socket = io('http://localhost:3000');
+
+      var handleSuccess = function(stream) {
+        var context = new AudioContext();
+        var input = context.createMediaStreamSource(stream)
+        var processor = context.createScriptProcessor(1024,1,1);
+
+        //Esto en la docomuentación está erroneamente como source.connect(processor);
+        input.connect(processor);
+        processor.connect(context.destination);
+
+        processor.onaudioprocess = function(e){
+          // Do something with the data, i.e Convert this to WAV
+          //console.log(e.inputBuffer);
+        };
+      };
+
+      navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+          .then(handleSuccess);
+
+
+      socket.on('connect', function () {
+        socket.send('hi');
+
+        socket.on('message', function (msg) {
+          console.log("Message recieved in client");
+        });
+      });
+
+
+
+    /*
+      var session = {
+        audio: true,
+        video: false
+      };
+      var recordRTC = null;
+      navigator.getUserMedia(session, initializeRecorder, () => {
+        console.log("Error on getUserMedia");
+      });
+
+      function initializeRecorder(stream) {
+        var audioContext = window.AudioContext;
+        var context = new audioContext();
+        var audioInput = context.createMediaStreamSource(stream);
+        var bufferSize = 2048;
+        // create a javascript node
+        var recorder = context.createScriptProcessor(bufferSize, 1, 1);
+        // specify the processing function
+        recorder.onaudioprocess = recorderProcess;
+        // connect stream to our recorder
+        audioInput.connect(recorder);
+        // connect our recorder to the previous destination
+        recorder.connect(context.destination);
+      }
+
+      function recorderProcess(e) {
+        var left = e.inputBuffer.getChannelData(0);
+        window.Stream.write(convertFloat32ToInt16(left));
+      }
+
+      function convertFloat32ToInt16(buffer) {
+        l = buffer.length;
+        buf = new Int16Array(l);
+        while (l--) {
+          buf[l] = Math.min(1, buffer[l])*0x7FFF;
+        }
+        return buf.buffer;
+      }
+
+      var client = new BinaryClient('ws://localhost:9001');
+
+      client.on('open', function() {
+        // for the sake of this example let's put the stream in the window
+        window.Stream = client.createStream();
+      })
+      */
+    </script>
+  </body>
+</html>
