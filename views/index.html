@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Cognitiva | Watson STT</title>
 
-    <script src="javascripts/socket.io.js"></script>
+
 
   </head>
   <body>
@@ -13,11 +13,14 @@
     <p>Let's hope it works.</p>
 
     <audio id="player" controls></audio>
+    <script src="javascripts/socket.io.js"></script>
     <script>
       //Documentación: https://developers.google.com/web/fundamentals/native-hardware/recording-audio/
       var player = document.getElementById('player');
+
       var socket = io('http://localhost:3000');
 
+      let bufferToSend = '';
       var handleSuccess = function(stream) {
         var context = new AudioContext();
         var input = context.createMediaStreamSource(stream)
@@ -28,8 +31,11 @@
         processor.connect(context.destination);
 
         processor.onaudioprocess = function(e){
-          // Do something with the data, i.e Convert this to WAV
-          //console.log(e.inputBuffer);
+          //Tomo la data de e.inputBuffer de lado izquierdo y la convierto a Buffer con convertFloat32toInt16
+          bufferToSend = convertFloat32ToInt16(e.inputBuffer.getChannelData(0))
+          //console.log(bufferToSend);
+
+
         };
       };
 
@@ -38,44 +44,30 @@
 
 
       socket.on('connect', function () {
+        /*
         socket.send('hi');
+        socket.emit('audioBufferFromClient', {bufferToSend})
 
         socket.on('message', function (msg) {
           console.log("Message recieved in client");
         });
+
+        socket.emit('createMessage', {
+          to:"John",
+          from:"Mike"
+        })
+        */
       });
 
+      //---------- Event Listeners ----------
+      socket.on('newMessage', function(data) {
+        console.log("New message: ",data);
+      })
+      socket.on('disconnect', function() {
+        console.log("Disconnected from server");
+      })
 
 
-    /*
-      var session = {
-        audio: true,
-        video: false
-      };
-      var recordRTC = null;
-      navigator.getUserMedia(session, initializeRecorder, () => {
-        console.log("Error on getUserMedia");
-      });
-
-      function initializeRecorder(stream) {
-        var audioContext = window.AudioContext;
-        var context = new audioContext();
-        var audioInput = context.createMediaStreamSource(stream);
-        var bufferSize = 2048;
-        // create a javascript node
-        var recorder = context.createScriptProcessor(bufferSize, 1, 1);
-        // specify the processing function
-        recorder.onaudioprocess = recorderProcess;
-        // connect stream to our recorder
-        audioInput.connect(recorder);
-        // connect our recorder to the previous destination
-        recorder.connect(context.destination);
-      }
-
-      function recorderProcess(e) {
-        var left = e.inputBuffer.getChannelData(0);
-        window.Stream.write(convertFloat32ToInt16(left));
-      }
 
       function convertFloat32ToInt16(buffer) {
         l = buffer.length;
@@ -86,13 +78,6 @@
         return buf.buffer;
       }
 
-      var client = new BinaryClient('ws://localhost:9001');
-
-      client.on('open', function() {
-        // for the sake of this example let's put the stream in the window
-        window.Stream = client.createStream();
-      })
-      */
     </script>
   </body>
 </html>
