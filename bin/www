@@ -31,62 +31,6 @@ server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-
-io.on('connection', function (socket) {
-
-  getTokenSTT().then((token) => {
-    var wsURI = 'wss://stream.watsonplatform.net/speech-to-text/api/v1/recognize?watson-token=' +
-    token + '&model=es-ES_BroadbandModel';
-
-    socket.on('audioBufferFromClient',function(data){
-      console.log(data.bufferToSend);
-    })
-  })
-
-
-
-  //---------- Event Listeners ----------
-  socket.on('disconnect', function () {
-    console.log("\nSocket disconnected");
-    console.log("\n");
-  });
-
-  socket.on('createMessage', function(message){
-    console.log('createMessage event listened',message);
-    //Cuando me llega un mail o mensaje, envío a todos los ususarios el update
-    io.emit('newMessage',{
-      from:message.from,
-      to:message.to,
-      createdAt:new Date().getTime()
-    })
-    //Cuando me llega un mail o mensaje, envío a todos los ususarios MENOS A MI
-    socket.broadcast.emit('newMessage',{
-      from:message.from,
-      to:message.to,
-      createdAt:new Date().getTime()
-    })
-  })
-
-
-  //---------- --------------- ----------
-
-  //---------- Event Emmiters ----------
-  /*
-  socket.emit('newMessage',{
-    from:"Admin",
-    text:"Welcome to the chat",
-    createAt:new Date().getTime()
-  })
-
-  socket.broadcast.emit('newMessage',{
-    from:"Admin",
-    text:"A new user joined the chat",
-    createAt:new Date().getTime()
-  })
-  */
-});
-
-
 /**
  * Normalize a port into a number, string, or false.
  */
@@ -145,47 +89,4 @@ function onListening() {
     ? 'pipe ' + addr
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
-}
-
-
-/**
- * Speech to text
- */
-
-var token = '';
-
-let getTokenSTT = () => {
-  return new Promise(
-    (resolve, reject) => {
-      request.get('https://stream.watsonplatform.net/authorization/api/v1/token?url=https://stream.watsonplatform.net/speech-to-text/api', {
-        'auth': {
-          'user': '08f3a6da-75df-4e84-88b5-8c6322b1054c',
-          'pass': 'YnTw5Bx826vm'
-        }
-      },(error, response, body) => {
-        console.log(body);
-        token = body;
-        resolve(token);
-      });
-    }
-  )
-}
-
-
-
-
-function onOpen(evt) {
-  var message = {
-    'action': 'start',
-    'content-type': 'audio/l16;rate=22050'
-  };
-  websocket.send(JSON.stringify(message));
-}
-
-function onMessage(evt) {
-  console.log("\nonMessage: "+evt);
-}
-
-function onClose(evt) {
-  console.log("\nonClose: "+JSON.stringify(evt.data));
 }
